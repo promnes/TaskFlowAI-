@@ -10,7 +10,7 @@ from typing import Optional
 
 from sqlalchemy import (
     Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text, 
-    UniqueConstraint, Index, BigInteger
+    UniqueConstraint, Index, BigInteger, JSON
 )
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.ext.declarative import declarative_base
@@ -182,6 +182,7 @@ class Outbox(Base):
     subject: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     attachment_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    extra_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     
     # Processing
     processed_by: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)  # Admin telegram_id
