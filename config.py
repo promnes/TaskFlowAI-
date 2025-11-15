@@ -61,7 +61,10 @@ def validate_config():
     """Validate configuration settings"""
     errors = []
     
-    if not BOT_TOKEN or len(BOT_TOKEN) < 40:
+    # Allow dummy token for API-only mode
+    if not BOT_TOKEN:
+        errors.append("BOT_TOKEN is required")
+    elif len(BOT_TOKEN) < 20 and BOT_TOKEN != "dummy-token-for-api-mode":
         errors.append("Invalid BOT_TOKEN format")
     
     if not ADMIN_USER_IDS:

@@ -11,7 +11,7 @@ import logging
 from api.schemas import LoginRequest, RegisterRequest, TokenResponse
 from api.auth_utils import create_access_token, get_current_user
 from models import User
-from services.customer_id import generate_customer_id
+from services.customer_id import generate_customer_code
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ async def register(
         )
     
     # Generate customer code
-    customer_code = await generate_customer_id(session)
+    customer_code = await generate_customer_code(session)
     
     # Create new user (no telegram_id for mobile app users)
     new_user = User(

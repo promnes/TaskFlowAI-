@@ -45,7 +45,7 @@ async def create_deposit(
         type=OutboxType.DEPOSIT,
         status=OutboxStatus.PENDING,
         content=f"Deposit request: {request.amount} via {request.payment_method}",
-        metadata={
+        extra_data={
             "amount": request.amount,
             "payment_method": request.payment_method,
             "receipt_url": request.receipt_url,
@@ -75,7 +75,7 @@ async def create_withdrawal(
         type=OutboxType.WITHDRAWAL,
         status=OutboxStatus.PENDING,
         content=f"Withdrawal request: {request.amount}",
-        metadata={
+        extra_data={
             "amount": request.amount,
             "account_details": request.account_details,
             "notes": request.notes
@@ -104,7 +104,7 @@ async def create_complaint(
         type=OutboxType.COMPLAINT,
         status=OutboxStatus.PENDING,
         content=f"{request.subject}: {request.description}",
-        metadata={
+        extra_data={
             "subject": request.subject,
             "description": request.description,
             "attachment_url": request.attachment_url
@@ -138,7 +138,7 @@ async def get_transactions(
         TransactionResponse(
             id=t.id,
             type=t.type.value,
-            amount=t.metadata.get("amount") if t.metadata else None,
+            amount=t.extra_data.get("amount") if t.extra_data else None,
             status=t.status.value,
             created_at=t.created_at,
             updated_at=t.updated_at

@@ -24,6 +24,13 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 
+# Database dependency - will be imported from dependencies module
+def get_db_dependency():
+    """Import get_db to avoid circular imports"""
+    from api.dependencies import get_db
+    return get_db
+
+
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """Create JWT access token"""
     to_encode = data.copy()
@@ -52,9 +59,9 @@ def verify_token(token: str) -> dict:
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: AsyncSession = None
+    session: AsyncSession = Depends(get_db_dependency())
 ) -> User:
-    """Get current user from JWT token"""
+    """Get current user from JWT token and database"""
     token = credentials.credentials
     payload = verify_token(token)
     
