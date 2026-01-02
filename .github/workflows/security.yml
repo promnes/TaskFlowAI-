@@ -1,0 +1,63 @@
+# GitHub Actions: Security Scanning
+
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly scan on Sunday at 2 AM
+
+jobs:
+  security-checks:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Run Semgrep security scan
+      uses: returntocorp/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/owasp-top-ten
+          p/python
+          p/flask
+          p/fastapi
+
+    - name: Run Bandit security scan
+      run: |
+        pip install bandit
+        bandit -r . -f json -o bandit-report.json || true
+
+    - name: Check Python dependencies
+      run: |
+        pip install safety
+        safety check --json > safety-report.json || true
+
+    - name: SAST with CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: 'python'
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+    - name: Upload Bandit Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: bandit-report
+        path: bandit-report.json
+
+    - name: Upload Safety Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: safety-report
+        path: safety-report.json

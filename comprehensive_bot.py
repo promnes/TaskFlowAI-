@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# IMPORTANT:
+# comprehensive_bot.py is the main and core file used to run the bot.
+# All executions start from this file.
 
 import os
 import json

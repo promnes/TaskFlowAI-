@@ -108,5 +108,78 @@
   "confirm_announcement": "✅ Confirm Publish",
   "cancel_announcement": "❌ Cancel Announcement",
   "announcement_created": "✅ Announcement created successfully\n\nAnnouncement ID: {announcement_id}\nRecipients: {target_count}\n\nThe announcement will be displayed to target users.",
-  "announcement_cancelled": "❌ Announcement creation cancelled."
+  "announcement_cancelled": "❌ Announcement creation cancelled.",
+  
+  "financial": {
+    "deposit": "💰 Deposit",
+    "withdrawal": "💸 Withdrawal",
+    "balance": "💳 Balance",
+    "transaction": "💼 Transaction",
+    "amount": "Amount",
+    "status": "Status",
+    "pending": "⏳ Pending",
+    "approved": "✅ Approved",
+    "rejected": "❌ Rejected",
+    "completed": "✅ Completed",
+    "processing": "⚙️ Processing",
+    "failed": "❌ Failed",
+    "transaction_id": "Transaction ID: {id}",
+    "transaction_date": "Date: {date}",
+    "wallet_number": "Wallet Number: {wallet}",
+    "bank_details": "Bank Details: {details}",
+    "min_deposit": "Minimum Deposit: {amount} {currency}",
+    "max_deposit": "Maximum Deposit: {amount} {currency}",
+    "min_withdrawal": "Minimum Withdrawal: {amount} {currency}",
+    "max_daily_withdrawal": "Maximum Daily Withdrawal: {amount} {currency}",
+    "insufficient_balance": "❌ Insufficient Balance",
+    "daily_limit_exceeded": "❌ Daily Limit Exceeded",
+    "processing_fee": "Processing Fee: {fee} {currency}",
+    "net_amount": "Net Amount: {amount} {currency}"
+  },
+  
+  "admin_financial": {
+    "pending_deposits": "⏳ Pending Deposits",
+    "pending_withdrawals": "⏳ Pending Withdrawals",
+    "approve": "✅ Approve",
+    "reject": "❌ Reject",
+    "reason": "Reason",
+    "approve_reason": "Reason for Approval",
+    "reject_reason": "Reason for Rejection",
+    "commission": "Commission",
+    "total_commission": "Total Commissions: {amount} {currency}",
+    "commission_rate": "Commission Rate: {rate}%",
+    "view_details": "View Details",
+    "process_request": "Process Request",
+    "confirm_action": "Confirm Action",
+    "request_processed": "✅ Request processed successfully"
+  },
+  
+  "errors": {
+    "generic": "❌ An error occurred",
+    "network": "❌ Network error",
+    "server": "❌ Server error",
+    "timeout": "❌ Request timeout",
+    "unauthorized": "❌ Unauthorized",
+    "forbidden": "❌ Forbidden",
+    "not_found": "❌ Not found",
+    "invalid_input": "❌ Invalid input",
+    "validation_error": "❌ Validation error",
+    "database_error": "❌ Database error",
+    "rate_limit_exceeded": "❌ Rate limit exceeded",
+    "user_banned": "❌ Your account is banned",
+    "user_not_found": "❌ User not found",
+    "invalid_credentials": "❌ Invalid credentials"
+  },
+  
+  "validation": {
+    "required": "❌ This field is required",
+    "invalid_format": "❌ Invalid format",
+    "too_short": "❌ Too short",
+    "too_long": "❌ Too long",
+    "invalid_phone": "❌ Invalid phone number",
+    "invalid_email": "❌ Invalid email",
+    "invalid_amount": "❌ Invalid amount",
+    "passwords_not_match": "❌ Passwords do not match",
+    "weak_password": "❌ Password is too weak"
+  }
 }

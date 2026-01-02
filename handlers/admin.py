@@ -6,11 +6,9 @@ Handles admin panel, user management, language/country management
 
 import logging
 from datetime import datetime, timezone
-from aiogram import Router, F
-from aiogram.filters import Command
+from aiogram import Router, F, Command
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc
 
@@ -23,15 +21,10 @@ from utils.keyboards import (
     get_user_management_keyboard, get_pagination_keyboard
 )
 from config import USERS_PER_PAGE
+from handlers.states import AdminStates
 
 logger = logging.getLogger(__name__)
 router = Router()
-
-class AdminStates(StatesGroup):
-    managing_user = State()
-    adding_language = State()
-    adding_country = State()
-    viewing_outbox = State()
 
 @router.message(Command("admin"))
 @admin_required
