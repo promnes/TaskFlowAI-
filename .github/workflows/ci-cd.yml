@@ -134,7 +134,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Check deployment requirements
+      id: check-deploy
+      run: |
+        if [[ -z "${{ secrets.DEPLOY_KEY }}" ]] || [[ -z "${{ secrets.DEPLOY_HOST }}" ]] || [[ -z "${{ secrets.DEPLOY_USER }}" ]]; then
+          echo "skip=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Deployment secrets not configured - skipping deployment"
+        else
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Deploy to production
+      if: steps.check-deploy.outputs.skip == 'false'
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -150,3 +161,9 @@ jobs:
           docker-compose up -d
           docker-compose exec -T api alembic upgrade head
         EOF
+
+    - name: Deployment skipped
+      if: steps.check-deploy.outputs.skip == 'true'
+      run: |
+        echo "✅ Deployment step skipped - secrets not configured"
+        echo "This is expected for development/testing environments"
