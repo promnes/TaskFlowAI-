@@ -33,7 +33,7 @@ pillow==11.1.0
 prometheus-client==0.21.0
 
 # ✅ Database migrations
-alembic==1.13.3
+alembic==1.17.2
 
 # ✅ Task queue for background jobs (optional)
 celery==5.3.4
