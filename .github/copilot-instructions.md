@@ -112,3 +112,84 @@ REQUIRED
 - Assume environment variables are configured
 
 END OF INSTRUCTIONS
+# ========================================================
+# AI BOT INSTRUCTION / PROJECT CONTEXT
+# ========================================================
+# PROJECT: Comprehensive Telegram Financial + Gaming Bot
+# ENTRY POINT: comprehensive_bot.py
+# GOAL:
+#   - Read all project files (handlers, services, models, utils)
+#   - Understand current implemented features
+#   - Identify missing features and gaps
+#   - Plan incremental execution of missing features
+#   - Ensure all features run through comprehensive_bot.py only
+#
+# EXISTING FEATURES:
+#   - Wallet system: deposits/withdrawals for companies
+#   - Users select company & payment method
+#   - Admin panel with basic operations
+#   - Async architecture (Aiogram v3 + Async SQLAlchemy)
+#   - Multi-language support (i18n)
+#   - Broadcast system
+#   - Admin authorization via @admin_required
+#
+# REQUIRED NEW FEATURES / DOMAINS:
+# 1. Games Engine:
+#     - Game selection
+#     - Play sessions linked to user wallet
+#     - Profit/loss calculation
+#     - Win probability / algorithm control
+#     - Per-user, per-region overrides
+#     - Anti-cheat logging
+# 2. User Profile & Security:
+#     - Require phone number on login (contact card or manual)
+#     - Warning if incorrect input
+#     - Profile image & documents upload
+#     - Password recovery & chat restoration
+#     - Badges based on activity
+# 3. Agents (Wakils):
+#     - Admin creates agent accounts
+#     - Agents manage payment methods for users
+#     - Track deposits/withdrawals
+#     - Commission engine (weekly)
+#     - Search engine for agent activity and user requests
+# 4. Complaints System:
+#     - Users submit complaints tied to transactions
+#     - Agents data hidden from users
+#     - Admin resolves, auto-adjusting balances and commissions
+# 5. Affiliate / Marketing system:
+#     - Generate unique referral codes
+#     - Track new users and commissions
+#     - Dashboard for affiliate performance
+# 6. Admin Dashboard:
+#     - Global search and filters
+#     - Algorithm control for games
+#     - Balance adjustments
+#     - Access to logs for each user/account
+#     - Upload new games
+#
+# EXECUTION PLAN:
+#   1. Read all files (handlers, services, models, utils)
+#   2. Parse implemented features vs missing ones
+#   3. Create domain modules for each missing feature
+#   4. Register all new routers/services in comprehensive_bot.py
+#   5. Preserve async correctness
+#   6. Preserve i18n patterns
+#   7. Preserve existing admin authorization
+#   8. Incrementally implement features, starting with:
+#       - Ledger / logging / user profiles
+#       - Games MVP
+#       - Agents
+#       - Affiliates
+#       - Complaints
+#       - Security enhancements
+#       - Admin dashboard improvements
+#
+# EXPECTED AI BEHAVIOR:
+#   - Do NOT skip any file
+#   - Fully understand models, routers, and services
+#   - Keep comprehensive_bot.py as the single entry point
+#   - Identify missing functionality and gaps
+#   - Suggest or scaffold missing modules incrementally
+#   - Maintain existing user flows and async patterns
+# ========================================================
