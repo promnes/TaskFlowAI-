@@ -65,8 +65,34 @@ def get_text(key: str, language: str = "ar", **kwargs) -> str:
     try:
         return text.format(**kwargs)
     except (KeyError, ValueError) as e:
+        # إذا كان هناك placeholder ناقص، نستخدم قيم افتراضية
         logger.warning(f"Error formatting text '{key}' for language '{language}': {e}")
-        return text
+        # محاولة التنسيق مع قيم افتراضية
+        defaults = {
+            'first_name': 'المستخدم',
+            'last_name': '',
+            'username': 'غير محدد',
+            'phone': 'غير محدد',
+            'customer_code': 'غير محدد',
+            'language': 'العربية',
+            'country': 'السعودية',
+            'notifications': 'مفعل',
+            'language_name': 'العربية',
+            'country_name': 'السعودية',
+            'status': 'مفعل',
+            'total_users': '0',
+            'active_users': '0',
+            'pending_requests': '0',
+            'page': '1',
+            'total_pages': '1'
+        }
+        # دمج القيم المُمررة مع القيم الافتراضية
+        merged_kwargs = {**defaults, **kwargs}
+        try:
+            return text.format(**merged_kwargs)
+        except:
+            # في حالة الفشل، نعيد النص كما هو
+            return text
 
 def get_user_language(language_code: str = None) -> str:
     """Get user's language code with fallback"""

@@ -29,6 +29,15 @@ class RegistrationStates(StatesGroup):
     waiting_for_phone = State()
     confirming_phone = State()
 
+@router.message(Command("myid"))
+async def show_my_id(message: Message):
+    """Show user's Telegram ID"""
+    await message.answer(
+        f"🆔 معرف التيليجرام الخاص بك:\n"
+        f"<code>{message.from_user.id}</code>\n\n"
+        f"📝 يمكنك استخدام هذا المعرف لإضافته إلى قائمة الأدمن في ملف .env"
+    )
+
 @router.message(CommandStart())
 async def start_command(message: Message, state: FSMContext, session_maker):
     """Handle /start command and user registration"""
@@ -41,11 +50,11 @@ async def start_command(message: Message, state: FSMContext, session_maker):
             # Get user's language for responses
             lang = get_user_language(user.language_code)
             
-            if not user.phone_number:
+            if not user.phone_encrypted:
                 # First time user - request phone number
                 await message.answer(
                     get_text("welcome_new_user", lang).format(
-                        first_name=user.first_name
+                        first_name=user.first_name or "المستخدم"
                     ),
                     reply_markup=get_phone_share_keyboard(lang)
                 )
@@ -55,7 +64,16 @@ async def start_command(message: Message, state: FSMContext, session_maker):
                 await show_main_menu(message, user, session)
                 
         except Exception as e:
-            logger.error(f"Error in start command: {e}")
+            logger.error(f"Error in start command: {e}", exc_info=True)
+            # في حالة UNIQUE constraint error، نجلب المستخدم الموجود
+            if "UNIQUE constraint" in str(e):
+                try:
+                    user = await get_user_by_telegram_id(session, message.from_user.id)
+                    if user:
+                        await show_main_menu(message, user, session)
+                        return
+                except:
+                    pass
             await message.answer(get_text("error_occurred", "ar"))
 
 @router.message(RegistrationStates.waiting_for_phone, F.contact)
@@ -75,7 +93,7 @@ async def handle_phone_contact(message: Message, state: FSMContext, session_make
             # Update user with phone number
             user = await get_user_by_telegram_id(session, message.from_user.id)
             if user:
-                user.phone_number = contact.phone_number
+                user.phone_encrypted = contact.phone_number.encode('utf-8')
                 user.updated_at = datetime.now(timezone.utc)
                 
                 # Generate customer code if not exists
@@ -177,11 +195,12 @@ async def handle_my_account(message: Message, session_maker):
             lang = get_user_language(user.language_code)
             
             # Format account information
+            phone_display = user.phone_encrypted.decode('utf-8') if user.phone_encrypted else get_text("not_set", lang)
             account_info = get_text("account_info", lang).format(
                 first_name=user.first_name,
                 last_name=user.last_name or "",
                 username=f"@{user.username}" if user.username else get_text("not_set", lang),
-                phone=user.phone_number or get_text("not_set", lang),
+                phone=phone_display,
                 customer_code=user.customer_code,
                 language=user.language_code.upper(),
                 country=user.country_code.upper(),
@@ -243,3 +262,24 @@ async def show_main_menu(message: Message, user: User, session: AsyncSession):
         welcome_back_text,
         reply_markup=get_main_menu_keyboard(lang)
     )
+
+
+# ==================== FALLBACK HANDLER ====================
+
+@router.message()
+async def fallback_handler(message: Message, session_maker):
+    """معالج احتياطي للرسائل غير المعروفة"""
+    async with session_maker() as session:
+        user = await get_user_by_telegram_id(session, message.from_user.id)
+        if not user:
+            await message.answer("❌ يرجى التسجيل أولاً باستخدام /start")
+            return
+        
+        lang = get_user_language(user.language_code)
+        
+        # رسالة توجيهية
+        await message.answer(
+            "❓ الأمر غير معروف\n\n"
+            "يرجى استخدام الأزرار الموجودة في القائمة أدناه 👇",
+            reply_markup=get_main_menu_keyboard(lang)
+        )

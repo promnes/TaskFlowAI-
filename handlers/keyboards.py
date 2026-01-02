@@ -15,36 +15,44 @@ def get_main_menu_keyboard(language: str = "ar") -> ReplyKeyboardMarkup:
     """Main menu keyboard"""
     i18n = get_i18n_service()
     
-    return ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(
-                    text=i18n.get_text("menu.balance", language)
-                ),
-                KeyboardButton(
-                    text=i18n.get_text("menu.deposit", language)
-                ),
+    if language == "ar":
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="💰 رصيدي"),
+                    KeyboardButton(text="💰 طلب إيداع"),
+                ],
+                [
+                    KeyboardButton(text="💸 طلب سحب"),
+                    KeyboardButton(text="📊 معاملاتي"),
+                ],
+                [
+                    KeyboardButton(text="💬 دعم العملاء"),
+                    KeyboardButton(text="⚙️ الإعدادات"),
+                ],
             ],
-            [
-                KeyboardButton(
-                    text=i18n.get_text("menu.withdraw", language)
-                ),
-                KeyboardButton(
-                    text=i18n.get_text("menu.transactions", language)
-                ),
+            resize_keyboard=True,
+            is_persistent=True,
+        )
+    else:
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(text="💰 Balance"),
+                    KeyboardButton(text="💳 Deposit"),
+                ],
+                [
+                    KeyboardButton(text="💸 Withdraw"),
+                    KeyboardButton(text="📊 Transactions"),
+                ],
+                [
+                    KeyboardButton(text="💬 Support"),
+                    KeyboardButton(text="⚙️ Settings"),
+                ],
             ],
-            [
-                KeyboardButton(
-                    text=i18n.get_text("menu.support", language)
-                ),
-                KeyboardButton(
-                    text=i18n.get_text("menu.settings", language)
-                ),
-            ],
-        ],
-        resize_keyboard=True,
-        is_persistent=True,
-    )
+            resize_keyboard=True,
+            is_persistent=True,
+        )
 
 
 def get_language_selection_keyboard() -> InlineKeyboardMarkup:

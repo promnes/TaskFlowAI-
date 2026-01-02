@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Keyboard utilities for creating inline and reply keyboards
+Keyboard utilities - لوحات المفاتيح
 Handles all keyboard layouts for different bot functions
 """
 
@@ -13,37 +13,45 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
 from services.i18n import get_text
 
-def get_main_menu_keyboard(language: str = "ar") -> ReplyKeyboardMarkup:
-    """Create main menu reply keyboard"""
+def get_main_menu_keyboard(language: str = "ar", is_admin: bool = False) -> ReplyKeyboardMarkup:
+    """Create main menu reply keyboard - القائمة الرئيسية"""
     builder = ReplyKeyboardBuilder()
     
-    # Main action buttons - 2 per row
+    # Row 1: Deposit & Withdraw
     builder.row(
-        KeyboardButton(text=get_text("deposit", language)),
-        KeyboardButton(text=get_text("withdraw", language))
+        KeyboardButton(text='💰 طلب إيداع'),
+        KeyboardButton(text='💸 طلب سحب')
     )
     
+    # Row 2: My Requests & Profile
     builder.row(
-        KeyboardButton(text=get_text("complaints", language)),
-        KeyboardButton(text=get_text("support", language))
+        KeyboardButton(text='📋 طلباتي'),
+        KeyboardButton(text='👤 حسابي')
     )
     
+    # Row 3: Complaints & Support
     builder.row(
-        KeyboardButton(text=get_text("manager", language)),
-        KeyboardButton(text=get_text("plans", language))
+        KeyboardButton(text='📨 شكوى'),
+        KeyboardButton(text='🆘 دعم')
     )
     
+    # Row 4: Change Currency & Reset
     builder.row(
-        KeyboardButton(text=get_text("sales", language)),
-        KeyboardButton(text=get_text("settings", language))
+        KeyboardButton(text='💱 تغيير العملة'),
+        KeyboardButton(text='🔄 إعادة تعيين')
     )
     
-    # Bottom navigation buttons
+    # Row 5: Wallet & Affiliate (New Features)
     builder.row(
-        KeyboardButton(text=get_text("back", language)),
-        KeyboardButton(text=get_text("forward", language)),
-        KeyboardButton(text=get_text("my_account", language))
+        KeyboardButton(text='💰 محفظتي'),
+        KeyboardButton(text='🤝 برنامج الإحالة')
     )
+    
+    # Admin Button
+    if is_admin:
+        builder.row(
+            KeyboardButton(text='⚙️ لوحة التحكم')
+        )
     
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=False)
 
@@ -517,3 +525,201 @@ def get_announcement_confirmation_keyboard(language: str = "ar") -> InlineKeyboa
     )
     
     return builder.as_markup()
+
+
+# ==================== WALLET KEYBOARDS ====================
+
+def get_wallet_menu_keyboard() -> ReplyKeyboardMarkup:
+    """Wallet menu keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='💰 رصيدي'),
+        KeyboardButton(text='📜 سجل المعاملات')
+    )
+    
+    builder.row(
+        KeyboardButton(text='⚙️ إعدادات المحفظة')
+    )
+    
+    builder.row(
+        KeyboardButton(text='🏠 القائمة الرئيسية')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_deposit_menu_keyboard() -> ReplyKeyboardMarkup:
+    """Deposit menu keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='🏦 اختيار الشركة'),
+        KeyboardButton(text='📊 آخر العمليات')
+    )
+    
+    builder.row(
+        KeyboardButton(text='⬅️ رجوع'),
+        KeyboardButton(text='🏠 القائمة الرئيسية')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_withdrawal_menu_keyboard() -> ReplyKeyboardMarkup:
+    """Withdrawal menu keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='🏦 اختيار الشركة'),
+        KeyboardButton(text='📊 آخر العمليات')
+    )
+    
+    builder.row(
+        KeyboardButton(text='⬅️ رجوع'),
+        KeyboardButton(text='🏠 القائمة الرئيسية')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_affiliate_menu_keyboard() -> ReplyKeyboardMarkup:
+    """Affiliate program menu keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='📊 إحصائياتي'),
+        KeyboardButton(text='💰 طلب سحب')
+    )
+    
+    builder.row(
+        KeyboardButton(text='📋 قائمة الإحالات')
+    )
+    
+    builder.row(
+        KeyboardButton(text='🏠 القائمة الرئيسية')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+# ==================== ADMIN KEYBOARDS ====================
+
+def get_admin_dashboard_keyboard() -> ReplyKeyboardMarkup:
+    """Admin dashboard keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='👥 إدارة المستخدمين'),
+        KeyboardButton(text='💰 إدارة الأرصدة')
+    )
+    
+    builder.row(
+        KeyboardButton(text='🤝 إدارة الوكلاء'),
+        KeyboardButton(text='💵 إدارة العمولات')
+    )
+    
+    builder.row(
+        KeyboardButton(text='🏦 طرق الدفع'),
+        KeyboardButton(text='📊 التقارير')
+    )
+    
+    builder.row(
+        KeyboardButton(text='🏠 القائمة الرئيسية')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_confirmation_keyboard() -> ReplyKeyboardMarkup:
+    """Confirmation keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='✅ تأكيد'),
+        KeyboardButton(text='❌ إلغاء')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_yes_no_keyboard() -> ReplyKeyboardMarkup:
+    """Yes/No keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='✅ نعم'),
+        KeyboardButton(text='❌ لا')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+def get_back_to_main_keyboard() -> ReplyKeyboardMarkup:
+    """Back to main menu keyboard"""
+    builder = ReplyKeyboardBuilder()
+    
+    builder.row(
+        KeyboardButton(text='🏠 القائمة الرئيسية')
+    )
+    
+    return builder.as_markup(resize_keyboard=True)
+
+
+# ==================== HELPER FUNCTIONS ====================
+
+def get_currency_emoji(currency: str) -> str:
+    """Get currency emoji"""
+    emojis = {
+        'SAR': '🇸🇦',
+        'USD': '🇺🇸',
+        'EUR': '🇪🇺',
+        'AED': '🇦🇪',
+        'EGP': '🇪🇬',
+        'KWD': '🇰🇼',
+        'QAR': '🇶🇦',
+        'BHD': '🇧🇭',
+        'OMR': '🇴🇲',
+        'JOD': '🇯🇴',
+        'LBP': '🇱🇧',
+        'IQD': '🇮🇶',
+        'SYP': '🇸🇾',
+        'MAD': '🇲🇦',
+        'TND': '🇹🇳',
+        'DZD': '🇩🇿',
+        'LYD': '🇱🇾',
+        'TRY': '🇹🇷',
+    }
+    return emojis.get(currency, '💱')
+
+
+def get_currency_symbol(currency: str) -> str:
+    """Get currency symbol"""
+    symbols = {
+        'SAR': 'ر.س',
+        'USD': '$',
+        'EUR': '€',
+        'AED': 'د.إ',
+        'EGP': '£',
+        'KWD': 'd.k',
+        'QAR': 'ر.ق',
+        'BHD': 'd.b',
+        'OMR': 'ر.ع',
+        'JOD': 'd.a',
+        'LBP': 'ل.ل',
+        'IQD': 'ع.د',
+        'SYP': 'ل.س',
+        'MAD': 'd.m',
+        'TND': 'd.t',
+        'DZD': 'd.j',
+        'LYD': 'ل.د',
+        'TRY': '₺',
+    }
+    return symbols.get(currency, currency)
+
+
+def format_amount(amount: float, currency: str) -> str:
+    """Format amount with currency"""
+    emoji = get_currency_emoji(currency)
+    symbol = get_currency_symbol(currency)
+    return f"{emoji} {amount:,.2f} {symbol}"

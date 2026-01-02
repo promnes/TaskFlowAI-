@@ -371,6 +371,29 @@ class AuditLog(Base):
         return f"<AuditLog(id={self.id}, action={self.action}, admin={self.admin_id}, target={self.target_type}:{self.target_id})>"
 
 
+class WithdrawalAddress(Base):
+    """نموذج العناوين المحفوظة للسحب"""
+    __tablename__ = 'withdrawal_addresses'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('users.telegram_id'), nullable=False, index=True)
+    address: Mapped[str] = mapped_column(String(500), nullable=False)
+    label: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # "المنزل", "العمل", إلخ
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), server_default=func.now())
+    
+    # Relationships
+    user: Mapped['User'] = relationship('User', foreign_keys=[user_id])
+    
+    __table_args__ = (
+        Index('idx_withdrawal_address_user', 'user_id'),
+        Index('idx_withdrawal_address_active', 'is_active'),
+    )
+    
+    def __repr__(self):
+        return f"<WithdrawalAddress(id={self.id}, user={self.user_id}, label={self.label})>"
+
+
 class Commission(Base):
     """Agent commission tracking"""
     __tablename__ = 'commissions'
@@ -404,3 +427,228 @@ class Commission(Base):
     
     def __repr__(self):
         return f"<Commission(id={self.id}, agent={self.agent_id}, amount={self.amount})>"
+
+
+# ==================== NEW MODELS - WALLET SYSTEM ====================
+
+class CurrencyEnum(str, PyEnum):
+    """العملات المدعومة"""
+    SAR = "SAR"
+    USD = "USD"
+    EUR = "EUR"
+    AED = "AED"
+    EGP = "EGP"
+    KWD = "KWD"
+    QAR = "QAR"
+    BHD = "BHD"
+    OMR = "OMR"
+    JOD = "JOD"
+    TRY = "TRY"
+
+
+class Wallet(Base):
+    """محفظة المستخدم - كل مستخدم له محفظة لكل عملة"""
+    __tablename__ = 'wallets'
+    __table_args__ = (
+        UniqueConstraint('user_id', 'currency', name='uq_user_currency'),
+    )
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    currency = Column(Enum(CurrencyEnum), nullable=False, default=CurrencyEnum.SAR)
+    balance = Column(Numeric(15, 2), default=0.0, nullable=False)
+    frozen_amount = Column(Numeric(15, 2), default=0.0)
+    total_deposited = Column(Numeric(15, 2), default=0.0)
+    total_withdrawn = Column(Numeric(15, 2), default=0.0)
+    total_commission = Column(Numeric(15, 2), default=0.0)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="wallets")
+    transactions = relationship("WalletTransaction", back_populates="wallet", cascade="all, delete-orphan")
+
+
+class WalletTransaction(Base):
+    """سجل معاملات المحفظة - غير قابل للتعديل"""
+    __tablename__ = 'wallet_transactions'
+    
+    id = Column(Integer, primary_key=True)
+    wallet_id = Column(Integer, ForeignKey('wallets.id'), nullable=False)
+    type = Column(String(20), nullable=False)  # deposit, withdraw, commission, refund
+    amount = Column(Numeric(15, 2), nullable=False)
+    reference_id = Column(String(100))
+    description = Column(Text)
+    status = Column(String(20), default='completed')
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    wallet = relationship("Wallet", back_populates="transactions")
+
+
+# ==================== NEW MODELS - AFFILIATE SYSTEM ====================
+
+class AffiliateStatus(str, PyEnum):
+    """حالة الوكيل"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+    PENDING = "pending"
+
+
+class CommissionType(str, PyEnum):
+    """نوع العمولة"""
+    PERCENTAGE = "percentage"
+    FIXED = "fixed"
+
+
+class Affiliate(Base):
+    """الوكيل أو المسوق"""
+    __tablename__ = 'affiliates'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, unique=True)
+    affiliate_code = Column(String(20), unique=True, nullable=False)
+    affiliate_link = Column(String(255))
+    name = Column(String(100), nullable=False)
+    phone = Column(String(20))
+    email = Column(String(100))
+    commission_type = Column(Enum(CommissionType), default=CommissionType.PERCENTAGE)
+    commission_rate = Column(Numeric(10, 2), nullable=False)
+    total_referrals = Column(Integer, default=0)
+    active_referrals = Column(Integer, default=0)
+    total_commission_earned = Column(Numeric(15, 2), default=0.0)
+    total_commission_paid = Column(Numeric(15, 2), default=0.0)
+    pending_commission = Column(Numeric(15, 2), default=0.0)
+    status = Column(Enum(AffiliateStatus), default=AffiliateStatus.ACTIVE)
+    is_verified = Column(Boolean, default=False)
+    minimum_payout = Column(Numeric(10, 2), default=100.0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User", back_populates="affiliate")
+    referrals = relationship("AffiliateReferral", back_populates="affiliate")
+    commissions = relationship("AffiliateCommission", back_populates="affiliate")
+    payouts = relationship("AffiliatePayout", back_populates="affiliate")
+
+
+class AffiliateReferral(Base):
+    """الإحالات - العملاء الذين جاءوا من الوكيل"""
+    __tablename__ = 'affiliate_referrals'
+    
+    id = Column(Integer, primary_key=True)
+    affiliate_id = Column(Integer, ForeignKey('affiliates.id'), nullable=False)
+    referred_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    referral_date = Column(DateTime, default=datetime.utcnow)
+    total_spent = Column(Numeric(15, 2), default=0.0)
+    commission_earned = Column(Numeric(15, 2), default=0.0)
+    status = Column(String(20), default='active')
+    
+    # Relationships
+    affiliate = relationship("Affiliate", back_populates="referrals")
+    referred_user = relationship("User")
+
+
+class AffiliateCommission(Base):
+    """عمولات الوكيل"""
+    __tablename__ = 'affiliate_commissions'
+    
+    id = Column(Integer, primary_key=True)
+    affiliate_id = Column(Integer, ForeignKey('affiliates.id'), nullable=False)
+    transaction_id = Column(Integer)
+    transaction_amount = Column(Numeric(15, 2), nullable=False)
+    commission_amount = Column(Numeric(15, 2), nullable=False)
+    status = Column(String(20), default='pending')
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    affiliate = relationship("Affiliate", back_populates="commissions")
+
+
+class AffiliatePayout(Base):
+    """دفعات الوكيل"""
+    __tablename__ = 'affiliate_payouts'
+    
+    id = Column(Integer, primary_key=True)
+    affiliate_id = Column(Integer, ForeignKey('affiliates.id'), nullable=False)
+    amount = Column(Numeric(15, 2), nullable=False)
+    currency = Column(String(10), default='SAR')
+    payment_method = Column(String(50))
+    status = Column(String(20), default='pending')
+    created_at = Column(DateTime, default=datetime.utcnow)
+    processed_at = Column(DateTime)
+    
+    # Relationships
+    affiliate = relationship("Affiliate", back_populates="payouts")
+
+
+# ==================== NEW MODELS - PAYMENT METHODS ====================
+
+class PaymentMethodType(str, PyEnum):
+    """أنواع طرق الدفع"""
+    BANK_TRANSFER = "bank_transfer"
+    IBAN = "iban"
+    WALLET = "wallet"
+    CRYPTO = "crypto"
+    CARD = "card"
+
+
+class PaymentMethodStatus(str, PyEnum):
+    """حالة طريقة الدفع"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+    DISABLED = "disabled"
+
+
+class PaymentMethod(Base):
+    """طرق الدفع المتاحة"""
+    __tablename__ = 'payment_methods'
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    type = Column(Enum(PaymentMethodType), nullable=False)
+    display_name_ar = Column(String(150), nullable=False)
+    display_name_en = Column(String(150))
+    deposit_fee = Column(Numeric(5, 2), default=0.0)
+    withdrawal_fee = Column(Numeric(5, 2), default=0.0)
+    min_deposit = Column(Numeric(15, 2), default=0.0)
+    max_deposit = Column(Numeric(15, 2), default=999999.99)
+    min_withdrawal = Column(Numeric(15, 2), default=0.0)
+    max_withdrawal = Column(Numeric(15, 2), default=999999.99)
+    supported_currencies = Column(JSON, default=['SAR'])
+    bank_details = Column(JSON)
+    config = Column(JSON)
+    status = Column(Enum(PaymentMethodStatus), default=PaymentMethodStatus.ACTIVE)
+    is_active = Column(Boolean, default=True)
+    is_deposit = Column(Boolean, default=True)
+    is_withdrawal = Column(Boolean, default=True)
+    order = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class UserPaymentMethod(Base):
+    """طرق الدفع المحفوظة للمستخدم"""
+    __tablename__ = 'user_payment_methods'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    payment_method_id = Column(Integer, ForeignKey('payment_methods.id'), nullable=False)
+    account_holder_name = Column(String(150))
+    account_number = Column(String(50))
+    bank_code = Column(String(10))
+    card_last_digits = Column(String(4))
+    extra_data = Column(JSON)
+    is_verified = Column(Boolean, default=False)
+    is_primary = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# Update User model to add relationships
+User.wallets = relationship("Wallet", back_populates="user")
+User.affiliate = relationship("Affiliate", back_populates="user", uselist=False)

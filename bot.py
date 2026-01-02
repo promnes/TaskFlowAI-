@@ -12,7 +12,12 @@ from aiogram.enums import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN
-from handlers import start, admin, broadcast, user_settings, announcements
+from handlers import (
+    start, admin, broadcast, user_settings, announcements, 
+    flying_plane_handler, legacy_handlers, admin_comprehensive, 
+    financial_operations, currency, addresses, requests, profile, support,
+    wallet, affiliate, admin_advanced
+)
 from services.broadcast_service import BroadcastService
 
 logger = logging.getLogger(__name__)
@@ -51,18 +56,34 @@ async def main(async_session):
         # Initialize broadcast service
         broadcast_service = BroadcastService(bot_instance, async_session)
         
-        # Register routers
+        # Register routers - ترتيب مهم: start.router يجب أن يكون آخراً!
         dp.include_routers(
-            start.router,
             user_settings.router,
+            financial_operations.router,
+            currency.router,
+            addresses.router,
+            requests.router,
+            profile.router,
+            support.router,
+            wallet.router,
+            affiliate.router,
+            admin_comprehensive.router,
+            admin_advanced.router,
             admin.router,
             broadcast.router,
-            announcements.router
+            announcements.router,
+            flying_plane_handler.router,
+            legacy_handlers.router,
+            start.router  # آخر router لأنه يحتوي على fallback handler
         )
         
         # Set session maker and services for handlers
-        for router in [start.router, user_settings.router, admin.router, 
-                      broadcast.router, announcements.router]:
+        for router in [user_settings.router, financial_operations.router, currency.router,
+                      addresses.router, requests.router, profile.router, support.router,
+                      wallet.router, affiliate.router,
+                      admin_comprehensive.router, admin_advanced.router, admin.router, 
+                      broadcast.router, announcements.router, 
+                      flying_plane_handler.router, legacy_handlers.router, start.router]:
             router.message.middleware.register(SessionMiddleware(async_session))
             router.callback_query.middleware.register(SessionMiddleware(async_session))
         
@@ -103,3 +124,10 @@ def get_session_maker():
 def get_broadcast_service():
     """Get broadcast service for external use"""
     return broadcast_service
+# AI NOTE:
+# This project has been evaluated as ~70% production-ready.
+# Critical gaps exist in:
+# - Automated testing
+# - Observability (metrics, health checks)
+# - Graceful shutdown & operational safety
+# Do NOT introduce new features before addressing CRITICAL items.

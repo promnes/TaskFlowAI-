@@ -12,7 +12,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from config import DATABASE_URL
-from models import Base
+import models
+Base = models.Base
 import bot
 
 # Configure logging
