@@ -14,7 +14,7 @@ import logging
 
 from config import DATABASE_URL
 from models import Base
-from api.routes import auth, users, financial, admin, settings
+from api.routes import auth, users, financial, admin, settings, predictive, model_monitoring
 from api.middleware import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -101,6 +101,8 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(financial.router, prefix="/api/v1/financial", tags=["Financial Services"])
 app.include_router(settings.router, prefix="/api/v1/settings", tags=["Settings"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])
+app.include_router(predictive.router)
+app.include_router(model_monitoring.router)
 
 
 @app.get("/")

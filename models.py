@@ -45,6 +45,59 @@ class DeliveryStatus(PyEnum):
     FAILED = "failed"
     BLOCKED = "blocked"
 
+class AgentStatus(PyEnum):
+    """Agent account status"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    SUSPENDED = "suspended"
+    OFFLINE = "offline"
+
+class SystemSettings(Base):
+    """✅ Centralized system configuration - Dynamic, audit-logged changes"""
+    __tablename__ = 'system_settings'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # Setting key (unique)
+    key: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    
+    # Setting value (stored as string, parsed on read)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    
+    # Category for grouping (agent_dist, game_algo, etc.)
+    category: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    
+    # Human-readable description
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Data type hint (string, int, float, bool, enum)
+    data_type: Mapped[Optional[str]] = mapped_column(String(20), default='string', nullable=True)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False
+    )
+    
+    # Who changed it
+    updated_by_admin_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    
+    __table_args__ = (
+        Index('idx_system_settings_category', 'category'),
+        Index('idx_system_settings_updated', 'updated_at'),
+    )
+    
+    def __repr__(self):
+        return f"<SystemSettings(key={self.key}, value={self.value}, category={self.category})>"
+
 class User(Base):
     """User model for storing Telegram user information"""
     __tablename__ = 'users'
@@ -116,6 +169,65 @@ class User(Base):
     
     def __repr__(self):
         return f"<User(id={self.id}, telegram_id={self.telegram_id}, customer_code={self.customer_code})>"
+
+class Agent(Base):
+    """✅ Agent model for financial request processing (Deposit/Withdrawal handlers)"""
+    __tablename__ = 'agents'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    
+    # Basic info
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    phone: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    
+    # Agent code (unique identifier for referencing)
+    agent_code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
+    
+    # Commission settings
+    commission_rate_deposit: Mapped[Decimal] = mapped_column(
+        Numeric(precision=5, scale=4),
+        default=Decimal('0.02'),  # 2% default
+        nullable=False
+    )
+    commission_rate_withdraw: Mapped[Decimal] = mapped_column(
+        Numeric(precision=5, scale=4),
+        default=Decimal('0.01'),  # 1% default
+        nullable=False
+    )
+    
+    # Statistics
+    total_deposits_processed: Mapped[Decimal] = mapped_column(
+        Numeric(precision=15, scale=2),
+        default=Decimal('0.00'),
+        nullable=False
+    )
+    total_withdrawals_processed: Mapped[Decimal] = mapped_column(
+        Numeric(precision=15, scale=2),
+        default=Decimal('0.00'),
+        nullable=False
+    )
+    total_commission_earned: Mapped[Decimal] = mapped_column(
+        Numeric(precision=15, scale=2),
+        default=Decimal('0.00'),
+        nullable=False
+    )
+    
+    # Status
+    status: Mapped[AgentStatus] = mapped_column(Enum(AgentStatus), default=AgentStatus.ACTIVE, nullable=False, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    __table_args__ = (
+        Index('idx_agents_status_active', 'status', 'is_active'),
+        Index('idx_agents_created', 'created_at'),
+    )
+    
+    def __repr__(self):
+        return f"<Agent(id={self.id}, agent_code={self.agent_code}, status={self.status})>"
 
 class Language(Base):
     """Language model for multi-language support"""
@@ -222,6 +334,11 @@ class Outbox(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
     attachment_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     extra_data: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    
+    # ✅ Agent Distribution Fields (New - Nullable for backward compatibility)
+    assigned_agent_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    assignment_strategy: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # MANUAL, AUTO_ROUND_ROBIN, AUTO_LOAD_BASED
+    assignment_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     # Processing
     processed_by: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)  # Admin telegram_id
@@ -649,6 +766,86 @@ class UserPaymentMethod(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+# ✅ Game System Models (New - for algorithm tracking)
+
+class GameSession(Base):
+    """Track individual game sessions with algorithm information"""
+    __tablename__ = 'game_sessions'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    
+    # Game type (dice, slots, coin, roulette)
+    game_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    
+    # ✅ Algorithm tracking
+    algorithm_used: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # FIXED_HOUSE_EDGE, DYNAMIC
+    algorithm_version: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    algorithm_parameters: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    
+    # Session state
+    status: Mapped[str] = mapped_column(String(20), default='ACTIVE', nullable=False)  # ACTIVE, COMPLETED, ABANDONED
+    total_rounds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    total_bets: Mapped[Decimal] = mapped_column(Numeric(15, 2), default=Decimal('0.00'), nullable=False)
+    total_wins: Mapped[Decimal] = mapped_column(Numeric(15, 2), default=Decimal('0.00'), nullable=False)
+    total_losses: Mapped[Decimal] = mapped_column(Numeric(15, 2), default=Decimal('0.00'), nullable=False)
+    
+    # Balance snapshots
+    initial_balance: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
+    final_balance: Mapped[Optional[Decimal]] = mapped_column(Numeric(15, 2), nullable=True)
+    
+    # Timestamps
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    ended_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    __table_args__ = (
+        Index('idx_game_sessions_user_created', 'user_id', 'started_at'),
+        Index('idx_game_sessions_type_created', 'game_type', 'started_at'),
+    )
+    
+    def __repr__(self):
+        return f"<GameSession(id={self.id}, user={self.user_id}, game={self.game_type}, algo={self.algorithm_used})>"
+
+
+class GameRound(Base):
+    """Individual game rounds within a session - tracks algorithm outcomes"""
+    __tablename__ = 'game_rounds'
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[int] = mapped_column(Integer, ForeignKey('game_sessions.id'), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    
+    # Round details
+    round_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    bet_amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
+    
+    # ✅ Algorithm outcome
+    result: Mapped[str] = mapped_column(String(20), nullable=False)  # WIN, LOSS, DRAW
+    payout_amount: Mapped[Decimal] = mapped_column(Numeric(15, 2), nullable=False)
+    multiplier: Mapped[Optional[float]] = mapped_column(numeric, nullable=True)
+    
+    # Game state
+    game_state: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Dice rolls, slots result, etc.
+    player_input: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Player's guess/prediction
+    
+    # ✅ Which algorithm calculated this
+    algorithm_used: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    algorithm_metadata: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # Debug info
+    
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    __table_args__ = (
+        Index('idx_game_rounds_session', 'session_id'),
+        Index('idx_game_rounds_user_created', 'user_id', 'created_at'),
+    )
+    
+    def __repr__(self):
+        return f"<GameRound(id={self.id}, session={self.session_id}, round={self.round_number}, result={self.result})>"
+
+
 # Update User model to add relationships
 User.wallets = relationship("Wallet", back_populates="user")
 User.affiliate = relationship("Affiliate", back_populates="user", uselist=False)
+User.game_sessions = relationship("GameSession", foreign_keys=[GameSession.user_id], backref="user_sessions")
+User.game_rounds = relationship("GameRound", foreign_keys=[GameRound.user_id], backref="user_rounds")
+

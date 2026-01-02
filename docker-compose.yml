@@ -3,20 +3,18 @@ version: '3.8'
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
     container_name: langsense-db
     environment:
       POSTGRES_USER: ${DB_USER:-langsense}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_change_in_prod}
-      POSTGRES_DB: ${DB_NAME:-langsense_db}
-      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-langsense_dev_password}
+      POSTGRES_DB: ${DB_NAME:-langsense}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-langsense} -d ${DB_NAME:-langsense_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-langsense}"]
       interval: 10s
       timeout: 5s
       retries: 5
